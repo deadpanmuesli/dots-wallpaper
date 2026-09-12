@@ -1,68 +1,95 @@
 // generate dots wallpaper
 // thrly
 
-// see comments for use of Perlin-noise variations
-
 // uses colours from Catppucin (Mocha): https://github.com/catppuccin/catppuccin
-const colours = [
-  "#b4befe",
-  "#89dceb",
-  // "#74c7ec",
-  "#a6e3a1",
-  "#f9e2af",
-  "#fab387",
-  "#f38ba8",
-  "#eba0ac",
-  "#cba6f7",
-  "#f5c2e7",
-  "#f2cdcd",
-  "#f5e0dc",
-];
+let options;
 
-const steps = 70;
-const dotSize = 20;
-const padding = steps;
-const fullGrid = true; // draw full grid of dots, or only a perlin-noise selected set
-
-const backgd = "#313244"; // background color
+function preload() {
+  options = loadJSON("options.json");
+}
 
 function setup() {
+  validateOptions();
+
   smooth();
-  createCanvas(1920, 1080); // landscape
+  createCanvas(options.canvas.width, options.canvas.height);
   
   noStroke();
 
-  background(backgd);
+  background(options.background);
   dots();
 }
 
-function dots(){
-  for (let x=0; x <= width; x+=steps){
-    for (let y=0; y <= height; y+=steps){
-        let noiseVal = noise(sin(x*0.2), cos(y*0.2));
-        let noiseValScaled = map(noiseVal,0,1,0,colours.length);
-        // let c = color(colours[Math.floor(noiseValScaled)+1]); // optional: perlin-noise colour development
-        let c = color(colours[Math.floor(random(colours.length))]); // or, random colour choices
-      
-      // c.setAlpha(160); // optional: translucent colours for a muted effect
-      fill(c);
-      const x_pos = map(x,0,Math.floor(width/steps) * steps,padding, width-padding);
-      const y_pos = map(y,0,Math.floor(height/steps) * steps,padding, height-padding);
-      
-      if(!fullGrid){
-let noiseVal2 = noise(x*0.005, y*0.005); // optional for drawin a full grid or noise selection
-      if(noiseVal2 > 0.5){
-      circle(x_pos,y_pos,dotSize);
+function dots() {
+  for (let x = 0; x <= width; x += options.steps) {
+    for (let y = 0; y <= height; y += options.steps) {
+      const noiseVal = noise(sin(x * 0.2), cos(y * 0.2));
+      const noiseValScaled = map(noiseVal, 0, 1, 0, options.colours.length);
+      const colourIndex = options.colourMode === "noise"
+        ? Math.min(Math.floor(noiseValScaled), options.colours.length - 1)
+        : Math.floor(random(options.colours.length));
+      const c = color(options.colours[colourIndex]);
+
+      if (options.alpha !== null) {
+        c.setAlpha(options.alpha);
       }
-      } else {
-        circle(x_pos,y_pos,dotSize);
+      fill(c);
+      const xPosition = map(
+        x,
+        0,
+        Math.floor(width / options.steps) * options.steps,
+        options.padding,
+        width - options.padding,
+      );
+      const yPosition = map(
+        y,
+        0,
+        Math.floor(height / options.steps) * options.steps,
+        options.padding,
+        height - options.padding,
+      );
+
+      const shouldDraw = options.gridMode === "full"
+        || noise(x * 0.005, y * 0.005) > options.noiseThreshold;
+      if (shouldDraw) {
+        circle(xPosition, yPosition, options.dotSize);
       }
     }
   }
 }
 
-function keyPressed(){
-  if (key === 's') {
-      save("dots.png");
+function keyPressed() {
+  if (key === "s") {
+    save(options.saveFilename);
+  }
+}
+
+function validateOptions() {
+  if (!options || !options.canvas || !Number.isInteger(options.canvas.width)
+      || !Number.isInteger(options.canvas.height)) {
+    throw new Error("options.json must define integer canvas width and height");
+  }
+  if (!Array.isArray(options.colours) || options.colours.length === 0) {
+    throw new Error("options.json must define at least one colour");
+  }
+  if (!["noise", "random"].includes(options.colourMode)) {
+    throw new Error('options.colourMode must be "noise" or "random"');
+  }
+  if (!["full", "noise"].includes(options.gridMode)) {
+    throw new Error('options.gridMode must be "full" or "noise"');
+  }
+  if (!Number.isFinite(options.steps) || options.steps <= 0
+      || !Number.isFinite(options.dotSize) || options.dotSize <= 0
+      || !Number.isFinite(options.padding) || options.padding < 0
+      || !Number.isFinite(options.noiseThreshold)
+      || options.noiseThreshold < 0 || options.noiseThreshold > 1) {
+    throw new Error("options.json contains invalid drawing dimensions or threshold");
+  }
+  if (options.alpha !== null
+      && (!Number.isFinite(options.alpha) || options.alpha < 0 || options.alpha > 255)) {
+    throw new Error("options.alpha must be null or a number from 0 to 255");
+  }
+  if (typeof options.background !== "string" || typeof options.saveFilename !== "string") {
+    throw new Error("options.json must define background and saveFilename");
   }
 }

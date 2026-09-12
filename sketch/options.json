@@ -1,0 +1,28 @@
+{
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "colours": [
+    "#b4befe",
+    "#89dceb",
+    "#a6e3a1",
+    "#f9e2af",
+    "#fab387",
+    "#f38ba8",
+    "#eba0ac",
+    "#cba6f7",
+    "#f5c2e7",
+    "#f2cdcd",
+    "#f5e0dc"
+  ],
+  "colourMode": "random",
+  "gridMode": "full",
+  "steps": 70,
+  "dotSize": 20,
+  "padding": 70,
+  "noiseThreshold": 0.5,
+  "alpha": null,
+  "background": "#313244",
+  "saveFilename": "dots.png"
+}
